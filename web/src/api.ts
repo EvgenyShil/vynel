@@ -186,6 +186,9 @@ export interface Inbound {
 }
 
 export interface Node {
+  note: string
+  xrayRelease: string
+  xrayReleaseSupported: boolean
   id: number
   code: string
   name: string

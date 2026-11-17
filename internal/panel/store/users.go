@@ -330,11 +330,11 @@ func scanUser(sc interface{ Scan(...any) error }) (*User, error) {
 func CreateUser(ctx context.Context, q DBTX, u *User) error {
 	now := unix()
 	u.CreatedAt, u.UpdatedAt = now, now
-	res, err := q.ExecContext(ctx, `INSERT INTO users (username, uuid, sub_token, disabled, status, expire_at, traffic_limit_bytes, reset_strategy, hwid_limit,
-		hwid_off, client_type, template_id, telegram_id, external_id, note, created_by, created_at, updated_at, ip_limit)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.Username, u.UUID, u.SubToken, u.Disabled, u.Status, nullInt(u.ExpireAt), nullInt(u.TrafficLimitBytes), u.ResetStrategy, nullInt(u.HWIDLimit),
-		u.HWIDOff, u.ClientType, nullInt(u.TemplateID), nullInt(u.TelegramID), nullStr(u.ExternalID), u.Note, u.CreatedBy, now, now, nullInt(u.IPLimit))
+	res, err := q.ExecContext(ctx, `INSERT INTO users (username, uuid, sub_token, disabled, status, expire_at, traffic_limit_bytes, traffic_used_bytes, lifetime_used_bytes,
+		reset_strategy, hwid_limit, hwid_off, client_type, template_id, telegram_id, external_id, note, created_by, created_at, updated_at, ip_limit)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.Username, u.UUID, u.SubToken, u.Disabled, u.Status, nullInt(u.ExpireAt), nullInt(u.TrafficLimitBytes), u.TrafficUsedBytes, u.LifetimeUsedBytes,
+		u.ResetStrategy, nullInt(u.HWIDLimit), u.HWIDOff, u.ClientType, nullInt(u.TemplateID), nullInt(u.TelegramID), nullStr(u.ExternalID), u.Note, u.CreatedBy, now, now, nullInt(u.IPLimit))
 	if err != nil {
 		return mapErr(err)
 	}

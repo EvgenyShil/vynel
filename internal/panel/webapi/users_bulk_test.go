@@ -36,11 +36,16 @@ func TestBulkUsersActionsAndPartialFailures(t *testing.T) {
 			t.Fatalf("%s: %d %s", action, w.Code, w.Body.String())
 		}
 		var result struct {
-			Succeeded []int64           `json:"succeeded"`
-			Failed    []bulkUserFailure `json:"failed"`
+			Succeeded   []int64           `json:"succeeded"`
+			FailedCount int               `json:"failed"`
+			Done        int               `json:"done"`
+			Failed      []bulkUserFailure `json:"failures"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatal(err)
+		}
+		if result.FailedCount != len(result.Failed) || result.Done != len(result.Succeeded) {
+			t.Fatalf("inconsistent bulk result: %+v", result)
 		}
 		return result.Succeeded, result.Failed
 	}

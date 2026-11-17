@@ -17,8 +17,12 @@ type bulkUserFailure struct {
 // action. One missing user does not prevent processing the rest; the caller gets exact outcomes.
 func (s *Server) bulkUsers(r *http.Request) (any, error) {
 	var in struct {
-		IDs    []int64 `json:"ids"`
-		Action string  `json:"action"`
+		IDs      []int64 `json:"ids"`
+		Action   string  `json:"action"`
+		Months   int     `json:"months"`
+		Days     int     `json:"days"`
+		GroupID  int64   `json:"groupId"`
+		GroupIDs []int64 `json:"groupIds"`
 	}
 	if err := decode(r, &in); err != nil {
 		return nil, err
@@ -27,9 +31,13 @@ func (s *Server) bulkUsers(r *http.Request) (any, error) {
 		return nil, badRequest("выберите от 1 до 500 пользователей")
 	}
 	switch in.Action {
-	case "enable", "disable", "reset", "delete":
+	case "enable", "disable", "reset", "delete", "extend", "setGroups":
+	case "addGroup":
+		if in.GroupID <= 0 {
+			return nil, badRequest("выберите группу")
+		}
 	default:
-		return nil, badRequest("действие: enable, disable, reset или delete")
+		return nil, badRequest("неизвестное групповое действие")
 	}
 	// Validate the entire request before changing anyone, and apply each ID at most once.
 	ids, seen := make([]int64, 0, len(in.IDs)), map[int64]bool{}
@@ -53,6 +61,12 @@ func (s *Server) bulkUsers(r *http.Request) (any, error) {
 				_, err = s.svc.SetUserEnabled(ctx, a, id, in.Action == "enable")
 			case "reset":
 				_, err = s.svc.ResetUserTraffic(ctx, a, id)
+			case "extend":
+				_, err = s.svc.ExtendUser(ctx, a, id, in.Months, in.Days)
+			case "addGroup":
+				_, err = s.svc.ChangeGroupMembers(ctx, a, in.GroupID, []int64{id}, true, false)
+			case "setGroups":
+				_, err = s.svc.SetUserGroups(ctx, a, id, in.GroupIDs)
 			case "delete":
 				err = s.svc.DeleteUser(ctx, a, id)
 			}
@@ -63,5 +77,5 @@ func (s *Server) bulkUsers(r *http.Request) (any, error) {
 			succeeded = append(succeeded, id)
 		}
 	}
-	return map[string]any{"succeeded": succeeded, "failed": failed}, nil
+	return map[string]any{"done": len(succeeded), "failed": len(failed), "succeeded": succeeded, "failures": failed}, nil
 }

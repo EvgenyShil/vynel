@@ -15,7 +15,7 @@
 ## 1. Запуск
 
 ```bash
-bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh)
+bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh)
 ```
 
 Схема в два слоя:

@@ -625,7 +625,7 @@ PanelMessage = Snapshot{revision, xray_config, nginx_config (caddy_config — с
 ## 16. Установка панели
 
 ```bash
-bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh)
+bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh)
 ```
 
 Интерактивный мастер в терминале: что ставим → проверка системы → интерфейсы и IP под панель, подписки и VLESS → домены с проверкой DNS → режим скрытия → сертификаты → привязка Telegram-бота кодом → пароль бэкапов → профиль ноды → сводка → установка. В конце кнопка входа приходит в Telegram. Подробно — [INSTALL.md](INSTALL.md).

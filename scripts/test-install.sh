@@ -37,9 +37,9 @@ resolve() { # CHANNEL REF_SET REF BUILT_RELEASE VYNEL_RELEASE VYNEL_RELEASE_URL 
 expect() { # description, expected, got
   [[ "$2" == "$3" ]] || bad "$1: got '$3', want '$2'"
 }
-base=https://github.com/vyto4ka/vynel/releases
+base=https://github.com/EvgenyShil/vynel/releases
 #      channel  ref_set ref         built        env-release env-url
-expect "plain tree copy installs the latest release" "latest $base/latest/download" "$(resolve "" 0 main "" "" "")"
+expect "plain tree copy follows fork main" "edge-main $base/download/edge-main" "$(resolve "" 0 main "" "" "")"
 expect "a stable release's installer" "latest $base/latest/download" "$(resolve "" 0 main latest "" "")"
 expect "a dev build's installer follows its branch" "edge-claude-x $base/download/edge-claude-x" "$(resolve dev 1 claude/x edge-claude-x "" "")"
 expect "dev build's installer without flags" "edge-claude-x $base/download/edge-claude-x" "$(resolve "" 0 claude/x edge-claude-x "" "")"
@@ -49,7 +49,7 @@ expect "--ref alone means dev (as before channels)" "edge-feat-y $base/download/
 expect "--channel stable overrides a dev build" "latest $base/latest/download" "$(resolve stable 0 main edge-claude-x "" "")"
 expect "update passes VYNEL_RELEASE" "edge-main $base/download/edge-main" "$(resolve "" 1 main latest edge-main "")"
 expect "a pinned tag" "v1.2.3 $base/download/v1.2.3" "$(resolve "" 0 main "" v1.2.3 "")"
-expect "a mirror URL" "latest https://mirror.example/r" "$(resolve "" 0 main "" "" https://mirror.example/r)"
+expect "a mirror URL" "edge-main https://mirror.example/r" "$(resolve "" 0 main "" "" https://mirror.example/r)"
 expect "an unknown channel" "die: unknown channel 'nightly' (stable or dev)" "$(resolve nightly 0 main "" "" "" || true)"
 
 # ---- release-assets.sh ----

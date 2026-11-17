@@ -24,7 +24,7 @@ func TestLoadSource(t *testing.T) {
 	if s.Ref != "claude/x" || s.Release != "edge-claude-x" || s.GHProxy != "https://ghfast.top/" || s.ReleaseURL != "" {
 		t.Fatalf("parsed: %+v", s)
 	}
-	if got := s.releaseURL(); got != "https://ghfast.top/https://github.com/vyto4ka/vynel/releases/download/edge-claude-x" {
+	if got := s.releaseURL(); got != "https://ghfast.top/https://github.com/EvgenyShil/vynel/releases/download/edge-claude-x" {
 		t.Fatalf("release url %q", got)
 	}
 	if s.Channel() != ChannelDev {
@@ -43,10 +43,10 @@ func TestStableChannel(t *testing.T) {
 	if s.Release != ReleaseLatest || s.Channel() != ChannelStable || s.Ref != "main" {
 		t.Fatalf("stable: %+v", s)
 	}
-	if got := s.releaseURL(); got != "https://ghfast.top/https://github.com/vyto4ka/vynel/releases/latest/download" {
+	if got := s.releaseURL(); got != "https://ghfast.top/https://github.com/EvgenyShil/vynel/releases/latest/download" {
 		t.Fatalf("latest url %q", got)
 	}
-	if got := (Source{Release: "v1.2.3"}).releaseURL(); got != "https://github.com/vyto4ka/vynel/releases/download/v1.2.3" {
+	if got := (Source{Release: "v1.2.3"}).releaseURL(); got != "https://github.com/EvgenyShil/vynel/releases/download/v1.2.3" {
 		t.Fatalf("pinned url %q", got)
 	}
 	if (Source{Release: "v1.2.3"}).Channel() != ChannelStable {

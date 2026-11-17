@@ -1,9 +1,9 @@
 # Установка
 
-То же в виде страницы с вкладками: [руководство](https://raw.githack.com/vyto4ka/vynel/main/docs/guide.html).
+То же в виде страницы с вкладками: [руководство](https://raw.githack.com/EvgenyShil/vynel/main/docs/guide.html).
 
 ```bash
-bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh)
+bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh)
 ```
 
 Команда под root на сервере открывает меню установщика:
@@ -144,7 +144,7 @@ bash <(curl -fsSL …/install.sh) --mode aio --domain nl.example.com --email you
 2. Панель покажет команду:
 
    ```bash
-   bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh) --mode node --token vyn1.…
+   bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh) --mode node --token vyn1.…
    ```
 
 3. **На новом сервере** (Ubuntu/Debian, root, свободные 80 и 443) выполните её. Установщик поставит vynel, Xray и nginx, подключит ноду к панели и запустит службу `vynel-node`. Порт 9443 панели откроется для этой ноды сам: пока токен не использован, он открыт всем, потом — только адресам нод.
@@ -176,7 +176,7 @@ bash <(curl -fsSL …/install.sh) --mode aio --domain nl.example.com --email you
   - Если обновление не удалось, плашка у ноды (или в баннере дашборда) станет красной «обновление не удалось»; по клику — лог. Если новая версия не запустилась, работает прежняя. Лог на сервере: `/var/log/vynel-update.log`.
   - Ноды, поставленные до этой версии, команду из панели не понимают: их нужно один раз обновить установщиком.
 - **Обновление на сервере:** `vynel update` (идёт в фоне, следить: `journalctl -u vynel-update -f`), `vynel update --foreground` (здесь и сейчас), `vynel update --check` (только сравнить версии). Или запустите установщик и выберите **4** (он предложит его сам, если на сервере уже что-то стоит), или `install.sh --mode update`. Обновляются vynel, Xray и nginx; пользователи, ключи, настройки, логин и пароль сохраняются. Перед обновлением панели делается бэкап базы в `/var/lib/vynel/backups/pre-update-<дата>.tar.gz`. С Caddy на nginx сервер переходит при обычном обновлении — [MIGRATION_NGINX.md](MIGRATION_NGINX.md). Откуда брать обновления (канал, релиз, зеркало GitHub), установщик записывает в `/etc/vynel/install.env`.
-- **Каналы обновлений.** По умолчанию сервер на канале **stable**: он видит только опубликованные релизы (вкладка Releases на GitHub), и новая версия появляется, когда разработчик выпустил релиз, а не с каждым коммитом. Канал **dev** нужен, чтобы проверить свежий коммит на своём сервере до выпуска: `vynel update --channel dev --ref main` переключает сервер на сборки ветки, `vynel update --channel stable` возвращает к релизам; `vynel update --check` показывает канал и последнюю версию. Ноды обновляются на канал панели: если панель на dev, «Обновить всё» поставит нодам ту же сборку, если на stable — релиз. Сборки веток публикуются как pre-release `edge-<ветка>` и никому не предлагаются, пока сервер не переключён на них. Подробности и выпуск релиза — [DEVELOPMENT.md](DEVELOPMENT.md#сборки-и-релизы).
+- **Каналы обновлений.** Установщик этого форка по умолчанию выбирает `dev/main`. Команда `vynel update --check` показывает канал и доступную версию. После публикации сборки кнопка «Обновить всё» обновляет панель и ноды. Для перехода со сборок другого репозитория выполните шаги из [README](../README.md#переход-с-исходного-проекта). Канал `stable` доступен после публикации стабильного релиза в этом форке.
 
   Как устроено обновление:
   - **Ничего лишнего не качается.** Если vynel или Xray уже последней версии, установщик пишет «already the latest». Повторное обновление занимает секунды.

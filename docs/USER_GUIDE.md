@@ -574,7 +574,7 @@ vynel admin profile set Reality --override '{"streamSettings":{"sockopt":{"tcpKe
 2. **На новом сервере** (Ubuntu/Debian, root, свободные 80/443) выполните эту команду:
 
    ```bash
-   bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh) --mode node --token vyn1.…
+   bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh) --mode node --token vyn1.…
    ```
 
    Она поставит vynel, Xray и nginx (пакеты `nginx` и `libnginx-mod-stream`), подключит ноду и запустит службу `vynel-node`. Можно и через меню установщика: пункт 3, затем вставить токен.

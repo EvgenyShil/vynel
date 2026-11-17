@@ -45,7 +45,7 @@ type Source struct {
 // ReleaseLatest is the Release of the stable channel: GitHub's "latest" release.
 const ReleaseLatest = "latest"
 
-const releasesBase = "https://github.com/vyto4ka/vynel/releases"
+const releasesBase = "https://github.com/EvgenyShil/vynel/releases"
 
 // Channel names, as `vynel update --channel` and the installer's --channel take them.
 const (

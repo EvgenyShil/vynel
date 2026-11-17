@@ -290,7 +290,7 @@ func (m *commandMenu) action(cmd *cobra.Command) error {
 		}
 	}
 	if commandKey(cmd) == "install" {
-		return m.note("Мастер установки", "Установку, перенастройку и защиту сервера выполняет установщик:\n\nbash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh)")
+		return m.note("Мастер установки", "Установку, перенастройку и защиту сервера выполняет установщик:\n\nbash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh)")
 	}
 	args, err := m.arguments(cmd)
 	if err != nil {

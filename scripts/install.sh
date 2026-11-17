@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # vynel installer: one script for every role (docs/INSTALL_GUIDE.md).
 #
-#   bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh)
+#   bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh)
 #
 # The installer is always taken from a release, never from a branch, and installs the binary of
-# that same release: the latest published release (stable channel, the default) or, for trying a
-# commit before it is released, the build CI makes of a branch (dev channel):
+# that same release. This fork follows the main branch build by default. Installers from
+# stable releases follow the latest stable release. To use another branch:
 #
-#   bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/download/edge-BRANCH/install.sh)
+#   bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-BRANCH/install.sh)
 #   install.sh --channel dev --ref BRANCH      (BRANCH with "/" written as "-" in the URL above)
 #   install.sh --binary ./vynel-linux-amd64    (a build from a CI run's artifacts, see docs/DEVELOPMENT.md)
 #
@@ -31,7 +31,7 @@ set -euo pipefail
 BUILT_RELEASE=""
 BUILT_REF=""
 
-REPO="${VYNEL_REPO:-https://github.com/vyto4ka/vynel.git}"
+REPO="${VYNEL_REPO:-https://github.com/EvgenyShil/vynel.git}"
 REF="${VYNEL_REF:-${BUILT_REF:-main}}"
 # --ref (or VYNEL_REF) without --channel means the dev channel of that branch, as before channels existed.
 REF_SET=0 CHANNEL="${VYNEL_CHANNEL:-}" LOCAL_BIN=""
@@ -101,8 +101,7 @@ Options:
                          "vynel admin user transfer export" on the old server). Remnawave and
                          3x-ui users are imported after the install: vynel admin user transfer
   --backup-password PASS password of an encrypted backup (asked when needed and not given)
-  --channel CHANNEL      stable: the latest published release (default); dev: the build CI makes of a
-                         branch from every push, to try a commit before it is released (see --ref)
+  --channel CHANNEL      dev: a branch build (default: main); stable: the latest tagged release
   --ref BRANCH           the branch of the dev channel (implies --channel dev); "/" in the name is "-" in release names
   --xray-version TAG     pin Xray to an official release tag (e.g. v26.10.31); latest removes the pin
   --binary FILE          install this vynel binary (e.g. from a CI run's artifacts) instead of downloading one
@@ -804,8 +803,7 @@ check_ports() {
 
 # ---- binaries ----
 # vynel: a prebuilt binary from a GitHub release. Two channels:
-#   stable  the latest published release (.github/workflows/release.yml): the default, and the
-#           only one that moves when a release is published on purpose;
+#   stable  the latest published stable release (.github/workflows/release.yml);
 #   dev     the pre-release CI builds of a branch on every push (.github/workflows/edge.yml), for
 #           trying a commit on your own server before it is released.
 # Building from source is the fallback only: on a 1 vCPU / 1 GB VPS it takes 10–20 minutes.
@@ -821,12 +819,12 @@ elif [[ "$CHANNEL" == dev || ( -z "$CHANNEL" && $REF_SET -eq 1 ) ]]; then
 elif [[ "$CHANNEL" == stable ]]; then
   RELEASE=latest
 else
-  RELEASE="${BUILT_RELEASE:-latest}"
+  RELEASE="${BUILT_RELEASE:-edge-main}"
 fi
 # release_dir RELEASE: where the files of a release are downloaded from.
 release_dir() {
-  if [[ "$1" == latest ]]; then echo "https://github.com/vyto4ka/vynel/releases/latest/download"
-  else echo "https://github.com/vyto4ka/vynel/releases/download/$1"; fi
+  if [[ "$1" == latest ]]; then echo "https://github.com/EvgenyShil/vynel/releases/latest/download"
+  else echo "https://github.com/EvgenyShil/vynel/releases/download/$1"; fi
 }
 RELEASE_URL="${VYNEL_RELEASE_URL:-$(release_dir "$RELEASE")}"
 TEMP_SWAP=0
@@ -1035,7 +1033,7 @@ build_from_source() {
   ensure_memory
   info "fetching source ($REF)"
   if [[ -d "$SRC/.git" ]]; then
-    timeout 600 git -C "$SRC" fetch -q --depth 1 origin "$REF"
+    timeout 600 git -C "$SRC" fetch -q --depth 1 "$REPO" "$REF"
     git -C "$SRC" reset -q --hard FETCH_HEAD
   else
     rm -rf "$SRC"
@@ -1106,7 +1104,7 @@ install_vynel() {
   done
   if [[ -x /usr/local/bin/vynel && $FROM_SOURCE -eq 0 ]]; then
     red "  cannot download the release: nothing changed, vynel keeps running."
-    red "  Check https://github.com/vyto4ka/vynel/releases and run the update again;"
+    red "  Check https://github.com/EvgenyShil/vynel/releases and run the update again;"
     red "  if GitHub is slow from this server, add --gh-proxy https://ghfast.top/"
     return 1
   fi
@@ -1703,7 +1701,7 @@ do_aio() {
   print_common_commands
   echo
   echo "  Ссылку подписки откройте на телефоне — там QR-код и кнопки для приложений."
-  echo "  Подробно: https://github.com/vyto4ka/vynel/blob/$REF/docs/INSTALL_GUIDE.md"
+  echo "  Подробно: https://github.com/EvgenyShil/vynel/blob/$REF/docs/INSTALL_GUIDE.md"
   echo
 }
 

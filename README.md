@@ -8,15 +8,15 @@
 
 VLESS Reality · XHTTP · Hysteria2 · один исполняемый файл · один домен · без Docker
 
-[![CI](https://github.com/vyto4ka/vynel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vyto4ka/vynel/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/vyto4ka/vynel?include_prereleases&label=release&color=39c5bb)](https://github.com/vyto4ka/vynel/releases)
-[![Go](https://img.shields.io/github/go-mod/go-version/vyto4ka/vynel?color=00ADD8&logo=go&logoColor=white)](go.mod)
+[![CI](https://github.com/EvgenyShil/vynel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/EvgenyShil/vynel/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/EvgenyShil/vynel?include_prereleases&label=release&color=39c5bb)](https://github.com/EvgenyShil/vynel/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/EvgenyShil/vynel?color=00ADD8&logo=go&logoColor=white)](go.mod)
 [![Xray](https://img.shields.io/badge/Xray-26.x-1fa79d)](https://github.com/XTLS/Xray-core)
 [![nginx](https://img.shields.io/badge/nginx-1.18%2B-009639?logo=nginx&logoColor=white)](https://nginx.org)
 [![Platform](https://img.shields.io/badge/Ubuntu%20%7C%20Debian-amd64%20%7C%20arm64-ff5fa2?logo=linux&logoColor=white)](#требования)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-a6e3a1)](LICENSE)
 
-[Установка](#установка) · [Руководство](https://raw.githack.com/vyto4ka/vynel/main/docs/guide.html) · [Обзор](#обзор) · [Возможности](#возможности) · [Требования](#требования) · [Потребление памяти](#потребление-памяти) · [Документация](#документация) · [Лицензия](#лицензия)
+[Установка](#установка) · [Руководство](https://raw.githack.com/EvgenyShil/vynel/main/docs/guide.html) · [Обзор](#обзор) · [Возможности](#возможности) · [Требования](#требования) · [Потребление памяти](#потребление-памяти) · [Документация](#документация) · [Лицензия](#лицензия)
 
 </div>
 
@@ -24,13 +24,15 @@ VLESS Reality · XHTTP · Hysteria2 · один исполняемый файл 
 
 ## Установка
 
-Под root на сервере:
+Этот форк основан на [vyto4ka/vynel](https://github.com/vyto4ka/vynel). Установщик берёт сборку ветки `main` из репозитория `EvgenyShil/vynel`.
+
+Для новой установки выполните под root на сервере:
 
 ```bash
-bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/install.sh)
+bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh)
 ```
 
-**[Пошаговое руководство →](https://raw.githack.com/vyto4ka/vynel/main/docs/guide.html)** — что подготовить, что значит каждый вопрос установщика, первое подключение и администрирование.
+**[Пошаговое руководство →](https://raw.githack.com/EvgenyShil/vynel/main/docs/guide.html)** — что подготовить, что значит каждый вопрос установщика, первое подключение и администрирование.
 
 Заранее нужны сервер на Ubuntu 22.04+ или Debian 11+ и домен с A-записью на его IP. Перед установкой стоит проверить, что IP сервера не заблокирован: подключиться к нему по SSH напрямую, без обходов.
 
@@ -40,7 +42,17 @@ bash <(curl -fsSL https://github.com/vyto4ka/vynel/releases/latest/download/inst
 
 Отдельная панель и ноды, обновление, удаление, типичные проблемы — [INSTALL_GUIDE.md](docs/INSTALL_GUIDE.md).
 
-Установка и обновления идут из [релизов](https://github.com/vyto4ka/vynel/releases): сервер получает новую версию, когда выпущен релиз, а не с каждым коммитом. Проверить свежий коммит на своём сервере до выпуска можно командой `vynel update --channel dev --ref main` ([как это устроено](docs/DEVELOPMENT.md#сборки-и-релизы)).
+### Переход с исходного проекта
+
+Один раз выполните под root на сервере панели и на каждой отдельно установленной ноде:
+
+```bash
+bash <(curl -fsSL https://github.com/EvgenyShil/vynel/releases/download/edge-main/install.sh) --mode update
+```
+
+Установщик обновляет существующую установку и перезапускает службы. На сервере панели перед обновлением создаётся резервная копия базы и ключей. На совмещённом сервере команда нужна один раз.
+
+Проверить канал можно командой `vynel update --check`. Новые изменения кода в `main` публикуются в [edge-main](https://github.com/EvgenyShil/vynel/releases/tag/edge-main). Когда сборка готова, установите её кнопкой обновления в панели или командой `vynel update`.
 
 ---
 
@@ -234,7 +246,7 @@ vynel firewall status                      # открытые порты и за
 
 | Документ | Содержание |
 |----------|-------|
-| [Руководство](https://raw.githack.com/vyto4ka/vynel/main/docs/guide.html) ([исходник](docs/guide.html)) | Установка, первое подключение и администрирование — по вкладкам |
+| [Руководство](https://raw.githack.com/EvgenyShil/vynel/main/docs/guide.html) ([исходник](docs/guide.html)) | Установка, первое подключение и администрирование — по вкладкам |
 | [INSTALL_GUIDE.md](docs/INSTALL_GUIDE.md) | Установка: всё на одном сервере, отдельная панель, ноды; обновление, удаление, типичные проблемы |
 | [USER_GUIDE.md](docs/USER_GUIDE.md) | Веб-панель, пользователи, группы, подписки, маршрутизация, каскады, HWID и лимит IP, статистика, ноды, Telegram, резервные копии, диагностика |
 | [PROFILES.md](docs/PROFILES.md) | Шаблоны профилей: Reality self-steal, XHTTP через CDN, XHTTP + REALITY, Hysteria2 |

@@ -9,11 +9,11 @@ fi
 if [[ -n "$here" && -f "$here/install.sh" ]]; then
   exec bash "$here/install.sh" "$@"
 fi
-# The installer comes from a release (the latest one; VYNEL_RELEASE=edge-BRANCH for a dev build).
-RELEASE="${VYNEL_RELEASE:-latest}"
+# The installer comes from a release (edge-main by default; VYNEL_RELEASE overrides the tag).
+RELEASE="${VYNEL_RELEASE:-edge-main}"
 if [[ "$RELEASE" == latest ]]; then
-  url="https://github.com/vyto4ka/vynel/releases/latest/download/install.sh"
+  url="https://github.com/EvgenyShil/vynel/releases/latest/download/install.sh"
 else
-  url="https://github.com/vyto4ka/vynel/releases/download/$RELEASE/install.sh"
+  url="https://github.com/EvgenyShil/vynel/releases/download/$RELEASE/install.sh"
 fi
 exec bash <(curl -fsSL "$url") "$@"

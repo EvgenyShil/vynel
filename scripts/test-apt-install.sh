@@ -8,7 +8,7 @@ trap 'rm -rf "$test_root"' EXIT
 # Only function definitions; never execute the installer's top level.
 eval "$(sed -n '/^apt_update() {/,/^# What the installation needs/p' scripts/install.sh)"
 
-for scenario in installed fresh fresh-404 stale update-failed download-failed ipv4; do
+for scenario in installed fresh cached-download fresh-404 stale update-failed download-failed ipv4; do
   (
     APT_LOG="$test_root/$scenario.log"
     events="$test_root/$scenario.events"
@@ -21,7 +21,7 @@ for scenario in installed fresh fresh-404 stale update-failed download-failed ip
     wait_apt_idle() { :; }
     dpkg() { :; }
     dpkg-query() { [[ "$scenario" == installed ]] && echo 'install ok installed'; }
-    lists_fresh() { [[ "$scenario" == fresh* || "$scenario" == download-failed ]]; }
+    lists_fresh() { [[ "$scenario" == fresh* || "$scenario" == cached-download || "$scenario" == download-failed ]]; }
     run_step() { shift 3; "$@" >>"$APT_LOG" 2>&1; }
     apt-get() {
       local args=" $* "
@@ -41,7 +41,11 @@ for scenario in installed fresh fresh-404 stale update-failed download-failed ip
         fi
       elif [[ "$args" == *' --download-only '* ]]; then
         echo download >>"$events"
-        if [[ "$scenario" == download-failed || ( "$scenario" != fresh && $refreshed -eq 0 ) ]]; then
+        if [[ "$scenario" == cached-download && ( "$args" != *' Acquire::http::No-Cache=true '* || "$args" != *' Acquire::https::No-Cache=true '* ) ]]; then
+          echo 'E: Failed to fetch nginx.deb 404 Not Found (cached response)'
+          return 100
+        fi
+        if [[ "$scenario" == download-failed || ( "$scenario" != fresh && "$scenario" != cached-download && $refreshed -eq 0 ) ]]; then
           echo 'E: Failed to fetch nginx.deb 404 Not Found'
           return 100
         fi
@@ -55,7 +59,7 @@ for scenario in installed fresh fresh-404 stale update-failed download-failed ip
     try_packages nginx libnginx-mod-stream >/dev/null || rc=$?
     case "$scenario" in
       installed) expected=""; expected_rc=0 ;;
-      fresh) expected=$'download\ninstall'; expected_rc=0 ;;
+      fresh|cached-download) expected=$'download\ninstall'; expected_rc=0 ;;
       fresh-404) expected=$'download\nupdate\ndownload\ninstall'; expected_rc=0 ;;
       stale) expected=$'update\ndownload\ninstall'; expected_rc=0 ;;
       update-failed) expected=update; expected_rc=1 ;;

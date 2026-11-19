@@ -502,14 +502,16 @@ apt_update() {
 # stopped halfway: an interrupted dpkg breaks the system).
 apt_install() {
   local rc=0
-  run_step "downloading $*" 60 900 apt-get "${APT_OPTS[@]}" install -y --download-only --no-install-recommends "$@" || rc=$?
+  # A package can become available while an HTTP cache still remembers its earlier 404.
+  local download_opts=(-o Acquire::http::No-Cache=true -o Acquire::https::No-Cache=true)
+  run_step "downloading $*" 60 900 apt-get "${APT_OPTS[@]}" "${download_opts[@]}" install -y --download-only --no-install-recommends "$@" || rc=$?
   if [[ $rc -eq 124 && " ${APT_OPTS[*]} " != *ForceIPv4* ]]; then
     APT_OPTS+=(-o Acquire::ForceIPv4=true)
     rc=0
-    run_step "downloading $* (IPv4)" 60 900 apt-get "${APT_OPTS[@]}" install -y --download-only --no-install-recommends "$@" || rc=$?
+    run_step "downloading $* (IPv4)" 60 900 apt-get "${APT_OPTS[@]}" "${download_opts[@]}" install -y --download-only --no-install-recommends "$@" || rc=$?
   fi
   [[ $rc -eq 0 ]] || return $rc
-  run_step "installing $*" 0 1800 apt-get "${APT_OPTS[@]}" install -y --no-install-recommends "$@"
+  run_step "installing $*" 0 1800 apt-get "${APT_OPTS[@]}" "${download_opts[@]}" install -y --no-install-recommends "$@"
 }
 
 # lists_fresh PKG...: the package lists know every PKG and are less than a day old. Fresh cloud

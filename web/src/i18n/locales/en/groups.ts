@@ -39,7 +39,7 @@ export default {
   user_status: 'Status',
   terms: 'Expiry and traffic',
   user_groups: 'Groups',
-  search_users: 'Search by username or note',
+  search_users: 'Search by username, full name or note',
   select_page: 'Select page',
   select_user: 'Select {name}',
   remove_help: 'Only membership is removed. Users, their other groups, copied expiry and limits are preserved.',

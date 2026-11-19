@@ -222,6 +222,7 @@ func checkReset(r *string) error {
 type CreateUserInput struct {
 	GroupDefaultsID   int64 // explicit enrollment from a group; copy defaults in the creation transaction
 	Username          string
+	FullName          string
 	TemplateID        int64 // 0 = default template
 	ExpireAt          *time.Time
 	NeverExpires      bool
@@ -241,6 +242,14 @@ type CreateUserInput struct {
 // token is at least 8 characters.
 var subTokenRe = regexp.MustCompile(`^[A-Za-z0-9_-]{8,64}$`)
 
+func normalizeUserFullName(name string) (string, error) {
+	name = strings.TrimSpace(name)
+	if len([]rune(name)) > 256 || strings.ContainsFunc(name, unicode.IsControl) {
+		return "", invalid("full name must be at most 256 characters with no control characters")
+	}
+	return name, nil
+}
+
 // CheckSubToken validates an own subscription token.
 func CheckSubToken(t string) error {
 	if !subTokenRe.MatchString(t) {
@@ -255,8 +264,11 @@ func (s *Service) CreateUser(ctx context.Context, actor Actor, in CreateUserInpu
 	if !usernameRe.MatchString(in.Username) {
 		return nil, invalid("username must be 1-64 letters, digits or _ . - @")
 	}
-	u := &store.User{Username: in.Username, Note: in.Note, TelegramID: in.TelegramID, ExternalID: in.ExternalID, CreatedBy: actor.Kind}
-	var err error
+	fullName, err := normalizeUserFullName(in.FullName)
+	if err != nil {
+		return nil, err
+	}
+	u := &store.User{Username: in.Username, FullName: fullName, Note: in.Note, TelegramID: in.TelegramID, ExternalID: in.ExternalID, CreatedBy: actor.Kind}
 	if u.UUID, err = xrayconf.NewUUID(); err != nil {
 		return nil, err
 	}

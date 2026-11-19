@@ -116,6 +116,7 @@ func (s *Server) routes() {
 type User struct {
 	ID            int64   `json:"id"`
 	Username      string  `json:"username"`
+	FullName      string  `json:"fullName"`
 	Status        string  `json:"status"`
 	Enabled       bool    `json:"enabled"`
 	ExpireAt      *int64  `json:"expireAt"`
@@ -140,7 +141,7 @@ func userDTO(u *store.User, groups []int64) User {
 	if groups == nil {
 		groups = []int64{}
 	}
-	return User{ID: u.ID, Username: u.Username, Status: u.Status, Enabled: !u.Disabled, ExpireAt: u.ExpireAt,
+	return User{ID: u.ID, Username: u.Username, FullName: u.FullName, Status: u.Status, Enabled: !u.Disabled, ExpireAt: u.ExpireAt,
 		TrafficLimit: u.TrafficLimitBytes, TrafficUsed: u.TrafficUsedBytes, LifetimeUsed: u.LifetimeUsedBytes,
 		ResetStrategy: u.ResetStrategy, HWIDLimit: u.HWIDLimit, HWIDOff: u.HWIDOff, IPLimit: u.IPLimit, ClientType: u.ClientType, Note: u.Note, OnlineAt: u.OnlineAt,
 		CreatedAt: u.CreatedAt, SubLastAt: u.SubLastAt, SubLastUA: u.SubLastUA, GroupIDs: groups, TemplateID: u.TemplateID}
@@ -379,7 +380,7 @@ func (s *Server) audit(r *http.Request) (any, error) {
 func (s *Server) users(r *http.Request) (any, error) {
 	ctx := r.Context()
 	q := r.URL.Query()
-	f := store.UserFilter{Status: q.Get("status"), Search: q.Get("search"), Sort: q.Get("sort"), Desc: q.Get("dir") == "desc"}
+	f := store.UserFilter{Status: q.Get("status"), Search: q.Get("search"), SearchFullName: true, Sort: q.Get("sort"), Desc: q.Get("dir") == "desc"}
 	if g, err := strconv.ParseInt(q.Get("group"), 10, 64); err == nil && g > 0 {
 		f.GroupID = &g
 	}
@@ -413,6 +414,7 @@ func (s *Server) users(r *http.Request) (any, error) {
 func (s *Server) createUser(r *http.Request) (any, error) {
 	var in struct {
 		Username     string  `json:"username"`
+		FullName     string  `json:"fullName"`
 		TemplateID   int64   `json:"templateId"`
 		GroupIDs     []int64 `json:"groupIds"`
 		Note         string  `json:"note"`
@@ -427,7 +429,7 @@ func (s *Server) createUser(r *http.Request) (any, error) {
 	if err := decode(r, &in); err != nil {
 		return nil, err
 	}
-	ci := service.CreateUserInput{Username: in.Username, TemplateID: in.TemplateID, GroupIDs: in.GroupIDs, Note: in.Note,
+	ci := service.CreateUserInput{Username: in.Username, FullName: in.FullName, TemplateID: in.TemplateID, GroupIDs: in.GroupIDs, Note: in.Note,
 		NeverExpires: in.NeverExpires, TrafficLimitBytes: in.TrafficLimit, ResetStrategy: in.Reset, HWIDLimit: in.HWIDLimit, IPLimit: in.IPLimit,
 		SubToken: in.SubToken}
 	if in.ExpireAt != nil {
@@ -525,6 +527,7 @@ func (s *Server) updateUser(r *http.Request) (any, error) {
 		return nil, err
 	}
 	var in struct {
+		FullName      *string `json:"fullName"`
 		Note          *string `json:"note"`
 		HWIDLimit     *int64  `json:"hwidLimit"`
 		HWIDOff       *bool   `json:"hwidOff"`
@@ -545,8 +548,8 @@ func (s *Server) updateUser(r *http.Request) (any, error) {
 	}
 	ctx, a := r.Context(), actor(r)
 	var u *store.User
-	if in.Note != nil || in.HWIDLimit != nil || in.HWIDOff != nil || in.IPLimit != nil || in.ClientType != nil || in.ResetStrategy != nil {
-		if u, err = s.svc.SetUserDetails(ctx, a, id, service.UserDetailsInput{Note: in.Note, HWIDLimit: in.HWIDLimit, HWIDOff: in.HWIDOff, IPLimit: in.IPLimit,
+	if in.FullName != nil || in.Note != nil || in.HWIDLimit != nil || in.HWIDOff != nil || in.IPLimit != nil || in.ClientType != nil || in.ResetStrategy != nil {
+		if u, err = s.svc.SetUserDetails(ctx, a, id, service.UserDetailsInput{FullName: in.FullName, Note: in.Note, HWIDLimit: in.HWIDLimit, HWIDOff: in.HWIDOff, IPLimit: in.IPLimit,
 			ClientType: in.ClientType, ResetStrategy: in.ResetStrategy}); err != nil {
 			return nil, err
 		}
@@ -1431,7 +1434,7 @@ func (s *Server) network(r *http.Request) (any, error) {
 // download; the token inside makes the file as sensitive as the panel itself.
 func (s *Server) usersExport(r *http.Request) (any, error) {
 	q := r.URL.Query()
-	filter := store.UserFilter{Status: q.Get("status"), Search: q.Get("search")}
+	filter := store.UserFilter{Status: q.Get("status"), Search: q.Get("search"), SearchFullName: true}
 	if g, err := strconv.ParseInt(q.Get("group"), 10, 64); err == nil && g > 0 {
 		filter.GroupID = &g
 	}

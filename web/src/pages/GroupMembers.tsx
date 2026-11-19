@@ -24,6 +24,7 @@ export function GroupMembers({ g, groups, onClose, onChanged }: { g: Group; grou
   const [selected, setSelected] = useState<number[]>([])
   const [apply, setApply] = useState(!!g.defaults)
   const [username, setUsername] = useState('')
+  const [fullName, setFullName] = useState('')
   const [busy, setBusy] = useState(false)
   const act = useAction()
   const confirm = useConfirm()
@@ -48,13 +49,16 @@ export function GroupMembers({ g, groups, onClose, onChanged }: { g: Group; grou
     {mode === 'create' ? <form onSubmit={async (e) => {
       e.preventDefault(); if (busy) return
       setBusy(true)
-      const r = await act(() => post(`groups/${g.id}/users`, { action: 'create', username }), t('groups.user_created'))
+      const r = await act(() => post(`groups/${g.id}/users`, { action: 'create', username, fullName }), t('groups.user_created'))
       setBusy(false)
-      if (r !== undefined) { setUsername(''); setMode('members'); setOffset(0); list.reload(); onChanged() }
+      if (r !== undefined) { setUsername(''); setFullName(''); setMode('members'); setOffset(0); list.reload(); onChanged() }
     }}>
       <p className="muted small">{t('groups.create_help')}</p>
       {g.defaults && <div className="alert"><GroupPolicySummary defaults={g.defaults} /></div>}
       <Field label={t('groups.username')}><input className="input" value={username} required maxLength={64} onChange={(e) => setUsername(e.target.value)} /></Field>
+      <Field label={t('users.full_name')} help={t('users.full_name_help')}>
+        <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+      </Field>
       <button className="btn primary" disabled={busy || !username.trim()}>{t('groups.create_user')}</button>
     </form> : <>
       <input className="input" aria-label={t('groups.search_users')} placeholder={t('groups.search_users')} value={search} disabled={busy} onChange={(e) => { setSearch(e.target.value); setOffset(0) }} />
@@ -62,7 +66,7 @@ export function GroupMembers({ g, groups, onClose, onChanged }: { g: Group; grou
       {mode === 'members' && <p className="muted small">{t('groups.remove_help')}</p>}
       {list.loading || list.error ? <Loading error={list.error} /> : !rows.length ? <Empty>{t('groups.no_matching_users')}</Empty> : <div className="table-wrap"><table className="table"><thead><tr>
         <th><input type="checkbox" aria-label={t('groups.select_page')} disabled={busy} checked={rows.length > 0 && rows.every((u) => selected.includes(u.id))} onChange={(e) => setSelected(e.target.checked ? rows.map((u) => u.id) : [])} /></th><th>{t('groups.username')}</th><th>{t('groups.user_status')}</th><th>{t('groups.terms')}</th><th>{t('groups.user_groups')}</th>
-      </tr></thead><tbody>{rows.map((u) => <tr key={u.id}><td><input type="checkbox" aria-label={t('groups.select_user', { name: u.username })} checked={selected.includes(u.id)} disabled={busy} onChange={(e) => setSelected((ids) => e.target.checked ? [...ids, u.id] : ids.filter((id) => id !== u.id))} /></td><td><b>{u.username}</b>{u.note && <div className="muted small">{u.note}</div>}</td><td><Badge color={statusInfo[u.status]?.color}>{statusInfo[u.status]?.label || u.status}</Badge></td><td className="small"><div>{u.expireAt ? date(u.expireAt) : t('groups.never')}</div><div className="muted">{bytes(u.trafficUsed)} / {u.trafficLimit == null ? '∞' : bytes(u.trafficLimit)}</div></td><td className="small muted">{u.groupIds.map((id) => groups.find((group) => group.id === id)?.name || `#${id}`).join(', ') || '—'}</td></tr>)}</tbody></table></div>}
+      </tr></thead><tbody>{rows.map((u) => <tr key={u.id}><td><input type="checkbox" aria-label={t('groups.select_user', { name: u.username })} checked={selected.includes(u.id)} disabled={busy} onChange={(e) => setSelected((ids) => e.target.checked ? [...ids, u.id] : ids.filter((id) => id !== u.id))} /></td><td><b>{u.username}</b>{u.fullName && <div className="small">{u.fullName}</div>}{u.note && <div className="muted small">{u.note}</div>}</td><td><Badge color={statusInfo[u.status]?.color}>{statusInfo[u.status]?.label || u.status}</Badge></td><td className="small"><div>{u.expireAt ? date(u.expireAt) : t('groups.never')}</div><div className="muted">{bytes(u.trafficUsed)} / {u.trafficLimit == null ? '∞' : bytes(u.trafficLimit)}</div></td><td className="small muted">{u.groupIds.map((id) => groups.find((group) => group.id === id)?.name || `#${id}`).join(', ') || '—'}</td></tr>)}</tbody></table></div>}
       {list.data && <div className="row" style={{ justifyContent: 'space-between', marginTop: 12 }}><span className="muted small">{t('groups.page_count', { from: list.data.total ? offset + 1 : 0, to: Math.min(offset + pageSize, list.data.total), total: list.data.total })}</span><div className="row"><button className="btn ghost sm" disabled={!ready || !offset} onClick={() => setOffset(Math.max(0, offset - pageSize))}>{t('groups.previous')}</button><button className="btn ghost sm" disabled={!ready || offset + pageSize >= list.data.total} onClick={() => setOffset(offset + pageSize)}>{t('groups.next')}</button></div></div>}
     </>}
   </Modal>

@@ -103,7 +103,7 @@ func TestUpgradeMainAndTrialSchemas(t *testing.T) {
 						t.Fatalf("node changed: %+v / %v", n, err)
 					}
 					u, err := GetUser(ctx, st.DB, 1)
-					if err != nil || u.Username != "existing-user" || u.TrafficUsedBytes != 70 || u.LifetimeUsedBytes != 120 {
+					if err != nil || u.Username != "existing-user" || u.FullName != "" || u.TrafficUsedBytes != 70 || u.LifetimeUsedBytes != 120 {
 						t.Fatalf("user changed: %+v / %v", u, err)
 					}
 					ids, err := UserGroupIDs(ctx, st.DB, 1)

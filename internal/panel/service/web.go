@@ -254,6 +254,7 @@ func (s *Service) JoinToken(ctx context.Context, caFingerprint, secret string) (
 
 // UserDetailsInput changes the descriptive fields of a user. Nil fields stay as they are.
 type UserDetailsInput struct {
+	FullName      *string `json:"-"` // private; excluded from audit diffs and API events
 	Note          *string `json:"note,omitempty"`
 	HWIDLimit     *int64  `json:"hwid_limit,omitempty"`  // <0 = back to the default limit
 	HWIDOff       *bool   `json:"hwid_off,omitempty"`    // true = no HWID check for this user
@@ -262,14 +263,27 @@ type UserDetailsInput struct {
 	ResetStrategy *string `json:"reset_strategy,omitempty"`
 }
 
-// SetUserDetails updates note, HWID limit, client type and reset strategy.
+// SetUserDetails updates private details and client settings.
 func (s *Service) SetUserDetails(ctx context.Context, actor Actor, id int64, in UserDetailsInput) (*store.User, error) {
+	if in.FullName != nil {
+		name, err := normalizeUserFullName(*in.FullName)
+		if err != nil {
+			return nil, err
+		}
+		in.FullName = &name
+	}
 	if in.ResetStrategy != nil {
 		if err := checkReset(in.ResetStrategy); err != nil {
 			return nil, err
 		}
 	}
-	return s.updateUser(ctx, actor, id, "user.set_details", in, func(_ store.DBTX, u *store.User) error {
+	return s.updateUser(ctx, actor, id, "user.set_details", in, func(q store.DBTX, u *store.User) error {
+		if in.FullName != nil && u.FullName != *in.FullName {
+			if err := store.SetUserFullName(ctx, q, id, *in.FullName); err != nil {
+				return err
+			}
+			u.FullName = *in.FullName
+		}
 		if in.Note != nil {
 			u.Note = *in.Note
 		}

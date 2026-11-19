@@ -55,6 +55,7 @@ export const del = <T = any>(p: string, signal?: AbortSignal) => api<T>('DELETE'
 export interface User {
   id: number
   username: string
+  fullName: string
   status: 'active' | 'disabled' | 'limited' | 'expired'
   enabled: boolean
   expireAt: number | null

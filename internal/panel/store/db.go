@@ -4,6 +4,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -12,11 +13,19 @@ import (
 	"time"
 
 	"github.com/pressly/goose/v3"
-	_ "modernc.org/sqlite" // database/sql driver "sqlite"
+	"modernc.org/sqlite"
 )
 
 //go:embed migrations/*.sql
 var migrations embed.FS
+
+func init() {
+	// SQLite's built-in lower only handles ASCII. Admin name searches also use Cyrillic.
+	sqlite.MustRegisterDeterministicScalarFunction("vynel_lower", 1, func(_ *sqlite.FunctionContext, args []driver.Value) (driver.Value, error) {
+		value, _ := args[0].(string)
+		return strings.ToLower(value), nil
+	})
+}
 
 // ErrNotFound is returned when a row does not exist.
 var ErrNotFound = errors.New("not found")

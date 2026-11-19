@@ -281,6 +281,7 @@ const (
 type User struct {
 	ID                int64
 	Username          string
+	FullName          string `json:"-"` // private; only the admin web API exposes it
 	UUID              string
 	SubToken          string
 	Disabled          bool
@@ -309,7 +310,7 @@ type User struct {
 
 const userCols = `id, username, uuid, sub_token, disabled, status, expire_at, traffic_limit_bytes, traffic_used_bytes, lifetime_used_bytes,
 	reset_strategy, last_reset_at, hwid_limit, client_type, template_id, telegram_id, external_id, note, online_at, created_by, created_at, updated_at,
-	sub_last_at, sub_last_ua, hwid_off, ip_limit`
+	sub_last_at, sub_last_ua, hwid_off, ip_limit, full_name`
 
 func scanUser(sc interface{ Scan(...any) error }) (*User, error) {
 	u := &User{}
@@ -317,7 +318,7 @@ func scanUser(sc interface{ Scan(...any) error }) (*User, error) {
 	var ext sql.NullString
 	if err := sc.Scan(&u.ID, &u.Username, &u.UUID, &u.SubToken, &u.Disabled, &u.Status, &expire, &limit, &u.TrafficUsedBytes, &u.LifetimeUsedBytes,
 		&u.ResetStrategy, &reset, &hwid, &u.ClientType, &tpl, &tg, &ext, &u.Note, &online, &u.CreatedBy, &u.CreatedAt, &u.UpdatedAt,
-		&subAt, &u.SubLastUA, &u.HWIDOff, &ipLimit); err != nil {
+		&subAt, &u.SubLastUA, &u.HWIDOff, &ipLimit, &u.FullName); err != nil {
 		return nil, mapErr(err)
 	}
 	u.SubLastAt, u.IPLimit = ptrInt(subAt), ptrInt(ipLimit)
@@ -331,10 +332,10 @@ func CreateUser(ctx context.Context, q DBTX, u *User) error {
 	now := unix()
 	u.CreatedAt, u.UpdatedAt = now, now
 	res, err := q.ExecContext(ctx, `INSERT INTO users (username, uuid, sub_token, disabled, status, expire_at, traffic_limit_bytes, traffic_used_bytes, lifetime_used_bytes,
-		reset_strategy, hwid_limit, hwid_off, client_type, template_id, telegram_id, external_id, note, created_by, created_at, updated_at, ip_limit)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		reset_strategy, hwid_limit, hwid_off, client_type, template_id, telegram_id, external_id, note, created_by, created_at, updated_at, ip_limit, full_name)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		u.Username, u.UUID, u.SubToken, u.Disabled, u.Status, nullInt(u.ExpireAt), nullInt(u.TrafficLimitBytes), u.TrafficUsedBytes, u.LifetimeUsedBytes,
-		u.ResetStrategy, nullInt(u.HWIDLimit), u.HWIDOff, u.ClientType, nullInt(u.TemplateID), nullInt(u.TelegramID), nullStr(u.ExternalID), u.Note, u.CreatedBy, now, now, nullInt(u.IPLimit))
+		u.ResetStrategy, nullInt(u.HWIDLimit), u.HWIDOff, u.ClientType, nullInt(u.TemplateID), nullInt(u.TelegramID), nullStr(u.ExternalID), u.Note, u.CreatedBy, now, now, nullInt(u.IPLimit), u.FullName)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -342,7 +343,8 @@ func CreateUser(ctx context.Context, q DBTX, u *User) error {
 	return err
 }
 
-// UpdateUser saves all editable user fields (not traffic counters).
+// UpdateUser saves editable user fields. The private full name is changed separately so
+// importing a user cannot overwrite it.
 func UpdateUser(ctx context.Context, q DBTX, u *User) error {
 	u.UpdatedAt = unix()
 	return execOne(ctx, q, `UPDATE users SET username=?, uuid=?, sub_token=?, disabled=?, status=?, expire_at=?, traffic_limit_bytes=?, traffic_used_bytes=?,
@@ -350,6 +352,10 @@ func UpdateUser(ctx context.Context, q DBTX, u *User) error {
 		u.Username, u.UUID, u.SubToken, u.Disabled, u.Status, nullInt(u.ExpireAt), nullInt(u.TrafficLimitBytes), u.TrafficUsedBytes,
 		u.ResetStrategy, nullInt(u.LastResetAt), nullInt(u.HWIDLimit), u.HWIDOff, u.ClientType, nullInt(u.TelegramID), nullStr(u.ExternalID), u.Note, u.UpdatedAt,
 		nullInt(u.IPLimit), u.ID)
+}
+
+func SetUserFullName(ctx context.Context, q DBTX, id int64, name string) error {
+	return execOne(ctx, q, `UPDATE users SET full_name=? WHERE id=?`, name, id)
 }
 
 // ActiveUUIDs returns id → UUID of every active user.
@@ -422,16 +428,17 @@ func GetUserByUUID(ctx context.Context, q DBTX, uuid string) (*User, error) {
 
 // UserFilter narrows ListUsers.
 type UserFilter struct {
-	GroupID      *int64 // member of this group; ExcludeGroup selects nonmembers
-	ExcludeGroup bool
-	Status       string  // '' = any
-	Search       string  // substring of username or note
-	TelegramID   *int64  // exactly this Telegram account
-	ExternalID   *string // exactly this id in the other system
-	Sort         string  // a key of userSorts; '' = by id
-	Desc         bool
-	Limit        int
-	Offset       int
+	GroupID        *int64 // member of this group; ExcludeGroup selects nonmembers
+	ExcludeGroup   bool
+	Status         string  // '' = any
+	Search         string  // substring of username or note
+	SearchFullName bool    // also match the private full name in the admin UI
+	TelegramID     *int64  // exactly this Telegram account
+	ExternalID     *string // exactly this id in the other system
+	Sort           string  // a key of userSorts; '' = by id
+	Desc           bool
+	Limit          int
+	Offset         int
 }
 
 // userSorts are the columns the users table sorts by. "Never" sorts last going up: no end date
@@ -473,9 +480,14 @@ func (f UserFilter) where() (string, []any) {
 		where, args = append(where, "status=?"), append(args, f.Status)
 	}
 	if f.Search != "" {
-		where = append(where, "(username LIKE ? OR note LIKE ?)")
+		clause := "username LIKE ? OR note LIKE ?"
 		like := "%" + f.Search + "%"
 		args = append(args, like, like)
+		if f.SearchFullName {
+			clause += " OR instr(vynel_lower(full_name), ?) > 0"
+			args = append(args, strings.ToLower(f.Search))
+		}
+		where = append(where, "("+clause+")")
 	}
 	if f.TelegramID != nil {
 		where, args = append(where, "telegram_id=?"), append(args, *f.TelegramID)

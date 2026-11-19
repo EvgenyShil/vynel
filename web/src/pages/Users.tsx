@@ -187,6 +187,7 @@ export function Users() {
                           {isOnline(u.onlineAt) && <span className="online-dot" title={tr('common.online_2')} />}
                           <b>{u.username}</b>
                         </div>
+                        {u.fullName && <div className="small ellipsis" style={{ maxWidth: 220 }} title={u.fullName}>{u.fullName}</div>}
                         {u.note && <div className="muted small ellipsis" style={{ maxWidth: 220 }}>{u.note}</div>}
                       </td>
                       <td><Badge color={st.color} dot>{st.label}</Badge></td>
@@ -375,6 +376,7 @@ function TransferUsers({ search, status, group, onClose, onImported }: { search:
 function CreateUser({ groups, onClose, onCreated }: { groups: Group[]; onClose: () => void; onCreated: (u: User) => void }) {
   const templates = useLoad(() => get<Template[]>('templates'))
   const [username, setUsername] = useState('')
+  const [fullName, setFullName] = useState('')
   const [templateId, setTemplateId] = useState(0)
   const [note, setNote] = useState('')
   const [ownGroups, setOwnGroups] = useState<number[] | null>(null)
@@ -393,7 +395,7 @@ function CreateUser({ groups, onClose, onCreated }: { groups: Group[]; onClose: 
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    const body: Record<string, unknown> = { username, templateId, note, groupIds: ownGroups ?? undefined, subToken: subToken.trim() }
+    const body: Record<string, unknown> = { username, fullName, templateId, note, groupIds: ownGroups ?? undefined, subToken: subToken.trim() }
     if (never) body.neverExpires = true
     else if (num(months) != null || num(days) != null) {
       const d = new Date()
@@ -417,6 +419,9 @@ function CreateUser({ groups, onClose, onCreated }: { groups: Group[]; onClose: 
       <form id="create-user" onSubmit={submit}>
         <Field label={tr('users.name')} help={tr('users.latin_letters_digits_and_e')}>
           <input className="input" autoFocus value={username} onChange={(e) => setUsername(e.target.value)} placeholder="vasya" />
+        </Field>
+        <Field label={tr('users.full_name')} help={tr('users.full_name_help')}>
+          <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </Field>
         <Field label={tr('common.template')} help={tr('users.grey_template_values')} info={tr('users.leave_a_field_alone_and')}>
           <select className="input" value={templateId} onChange={(e) => setTemplateId(Number(e.target.value))}>
@@ -574,6 +579,7 @@ function UserDrawer({ id, groups, onClose, onChanged }: { id: number; groups: Gr
           <div className="k">{tr('common.online')}</div><div>{isOnline(u.onlineAt) ? <span className="miku-text">{tr('common.now')}</span> : ago(u.onlineAt)}</div>
           <div className="k">{tr('users.subscription_refreshed')}</div><div>{ago(u.subLastAt)} {u.subLastUA && <span className="muted small">· {u.subLastUA}</span>}</div>
           <div className="k">{tr('users.format')}</div><div>{clientTypes[u.clientType] || u.clientType}</div>
+          {u.fullName && <><div className="k">{tr('users.full_name')}</div><div>{u.fullName}</div></>}
           {u.note && <><div className="k">{tr('users.note')}</div><div>{u.note}</div></>}
           <div className="k">{tr('users.created')}</div><div>{dateTime(u.createdAt)}</div>
         </div>
@@ -686,6 +692,7 @@ function EditUser({ u, hwidDefault, ipDefault, groups, onClose, onSaved }: { u: 
   const [ipLimit, setIPLimit] = useState(u.ipLimit == null ? '' : String(u.ipLimit))
   const [reset, setReset] = useState(u.resetStrategy)
   const [clientType, setClientType] = useState(u.clientType)
+  const [fullName, setFullName] = useState(u.fullName)
   const [note, setNote] = useState(u.note)
   const [groupIds, setGroupIds] = useState(u.groupIds)
   const act = useAction()
@@ -694,6 +701,7 @@ function EditUser({ u, hwidDefault, ipDefault, groups, onClose, onSaved }: { u: 
     e.preventDefault()
     const exp = fromDateInput(expire)
     const body: any = {
+      fullName: fullName !== u.fullName ? fullName : undefined,
       note, clientType, resetStrategy: reset, groupIds,
       hwidLimit: hwid === '' ? -1 : Number(hwid),
       ipLimit: ipLimit === '' ? -1 : Number(ipLimit),
@@ -709,6 +717,9 @@ function EditUser({ u, hwidDefault, ipDefault, groups, onClose, onSaved }: { u: 
     <Modal title={tr('users.edit', { username: u.username })} onClose={onClose}
       footer={<><button className="btn ghost" onClick={onClose}>{tr('common.cancel')}</button><button className="btn primary" form="edit-user">{tr('common.save')}</button></>}>
       <form id="edit-user" onSubmit={save}>
+        <Field label={tr('users.full_name')} help={tr('users.full_name_help')}>
+          <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </Field>
         <div className="grid2 keep2">
           <Field label={tr('users.valid_until')} help={tr('users.empty_no_expiry')}>
             <input className="input" type="date" value={expire} onChange={(e) => setExpire(e.target.value)} />

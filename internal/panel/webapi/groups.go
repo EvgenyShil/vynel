@@ -41,7 +41,7 @@ func (s *Server) groupUsers(r *http.Request) (any, error) {
 		limit = 50
 	}
 	offset, _ := strconv.Atoi(q.Get("offset"))
-	f := store.UserFilter{GroupID: &id, ExcludeGroup: q.Get("members") == "false", Search: q.Get("search"), Sort: "username", Limit: min(limit, 500), Offset: max(offset, 0)}
+	f := store.UserFilter{GroupID: &id, ExcludeGroup: q.Get("members") == "false", Search: q.Get("search"), SearchFullName: true, Sort: "username", Limit: min(limit, 500), Offset: max(offset, 0)}
 	us, err := s.svc.Users(ctx, f)
 	if err != nil {
 		return nil, err
@@ -68,13 +68,14 @@ func (s *Server) changeGroupUsers(r *http.Request) (any, error) {
 		IDs           []int64 `json:"ids"`
 		ApplyDefaults bool    `json:"applyDefaults"`
 		Username      string  `json:"username"`
+		FullName      string  `json:"fullName"`
 	}
 	if err := decode(r, &in); err != nil {
 		return nil, err
 	}
 	switch in.Action {
 	case "create":
-		u, err := s.svc.CreateUser(r.Context(), actor(r), service.CreateUserInput{Username: in.Username, GroupDefaultsID: id})
+		u, err := s.svc.CreateUser(r.Context(), actor(r), service.CreateUserInput{Username: in.Username, FullName: in.FullName, GroupDefaultsID: id})
 		if err != nil {
 			return nil, err
 		}

@@ -160,6 +160,9 @@ vynel admin user link vasya vasya-laptop-01     # сменить ссылку (�
 
 vynel admin user list                           # все; --status active|limited|expired|disabled, --search вас
 vynel admin user show vasya                     # статус, срок, трафик по нодам, ссылка подписки
+vynel admin user full-name vasya 'Иванов Иван Иванович'  # записать ФИО для администратора
+vynel admin user full-name vasya                 # посмотреть ФИО
+vynel admin user full-name vasya ''              # очистить ФИО
 
 vynel admin user extend vasya --months 1        # продлить; считается от даты окончания, если она ещё не прошла
 vynel admin user extend vasya --days 7

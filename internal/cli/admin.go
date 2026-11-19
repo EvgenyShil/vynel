@@ -850,7 +850,27 @@ func adminUserCmd() *cobra.Command {
 		}),
 	}
 
-	c.AddCommand(add, list, extend, groupsCmd, reissue, links, devices, link, userTransferCmd(),
+	fullName := &cobra.Command{
+		Use:   "full-name USERNAME [FULL_NAME]",
+		Short: "Show or change the private full name (pass an empty string to clear it)",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE: withService(func(ctx context.Context, s *service.Service, cmd *cobra.Command, args []string) error {
+			u, err := s.UserByUsername(ctx, args[0])
+			if err != nil {
+				return fmt.Errorf("user %q: %w", args[0], err)
+			}
+			if len(args) == 2 {
+				u, err = s.SetUserDetails(ctx, service.ActorCLI, u.ID, service.UserDetailsInput{FullName: &args[1]})
+				if err != nil {
+					return err
+				}
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), u.FullName)
+			return nil
+		}),
+	}
+
+	c.AddCommand(add, list, extend, groupsCmd, reissue, links, devices, link, fullName, userTransferCmd(),
 		&cobra.Command{
 			Use: "show USERNAME", Short: "Show a user with traffic per node and the subscription URL", Args: cobra.ExactArgs(1),
 			RunE: withService(func(ctx context.Context, s *service.Service, cmd *cobra.Command, args []string) error {

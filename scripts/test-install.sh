@@ -71,4 +71,5 @@ scripts/release-assets.sh "$tmp" 'x;y' latest >/dev/null 2>&1 && bad "a bad vers
 sed -n '/^BUILT_RELEASE=/,/^\[\[ -n "\${VYNEL_REF/p' "$tmp/install.sh" | grep -q 'BUILT_REF' || bad "built values not read"
 
 bash scripts/test-xray-install.sh || bad "Xray version selection"
+bash scripts/test-apt-install.sh || bad "APT package recovery"
 exit $fail

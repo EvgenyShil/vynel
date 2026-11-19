@@ -485,12 +485,15 @@ wait_apt_idle() {
 
 apt_update() {
   local rc=0
-  run_step "apt-get update" 60 600 apt-get "${APT_OPTS[@]}" update || rc=$?
+  # A proxy may serve an index that still names removed .deb files. Ask for fresh indexes and
+  # treat partial refreshes as failures, rather than letting APT silently keep its old lists.
+  local refresh_opts=(-o Acquire::http::No-Cache=true -o Acquire::https::No-Cache=true -o APT::Update::Error-Mode=any)
+  run_step "apt-get update" 60 600 apt-get "${APT_OPTS[@]}" "${refresh_opts[@]}" update || rc=$?
   if [[ $rc -eq 124 && " ${APT_OPTS[*]} " != *ForceIPv4* ]]; then
     echo "  a mirror stopped answering — retrying over IPv4"
     APT_OPTS+=(-o Acquire::ForceIPv4=true)
     rc=0
-    run_step "apt-get update (IPv4)" 60 600 apt-get "${APT_OPTS[@]}" update || rc=$?
+    run_step "apt-get update (IPv4)" 60 600 apt-get "${APT_OPTS[@]}" "${refresh_opts[@]}" update || rc=$?
   fi
   return $rc
 }
@@ -540,8 +543,11 @@ try_packages() {
     STEP_SOFT=1 apt_install "${missing[@]}" && return 0
     echo "  the package lists are out of date — refreshing them"
   fi
-  apt_update || red "  apt-get update failed — trying to install anyway"
-  apt_install "${missing[@]}" && return 0
+  if apt_update; then
+    apt_install "${missing[@]}" && return 0
+  else
+    red "  package indexes could not be refreshed; check the repository errors below"
+  fi
   red "  last lines of $APT_LOG:"
   tail -n 15 "$APT_LOG" | sed 's/^/    /'
   return 1
